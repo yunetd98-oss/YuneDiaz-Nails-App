@@ -1,0 +1,50 @@
+name: Construir APK YuneDiaz Nails
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar proyecto
+        uses: actions/checkout@v4
+
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar herramientas
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip
+
+      - name: Descomprimir proyecto Android
+        run: |
+          mkdir -p android-project
+          unzip -q YuneDiaz_Nails_Android_v3_AndroidStudio.zip -d android-project
+
+      - name: Encontrar proyecto Android
+        run: |
+          echo "Buscando proyecto Android..."
+          find android-project -name settings.gradle -o -name settings.gradle.kts
+
+      - name: Compilar APK
+        run: |
+          PROJECT_DIR=$(find android-project -name settings.gradle -o -name settings.gradle.kts | head -1 | xargs dirname)
+          echo "Proyecto encontrado en: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Guardar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: YuneDiaz-Nails-APK
+          path: android-project/**/build/outputs/apk/debug/*.apk
